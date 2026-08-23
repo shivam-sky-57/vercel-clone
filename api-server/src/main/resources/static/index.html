@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel Clone - Dashboard & Deployments</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #111111;
+            --border-color: #222222;
+            --text-primary: #ededed;
+            --text-secondary: #888888;
+            --accent-blue: #0070f3;
+            --accent-green: #50e3c2;
+            --terminal-bg: #0a0a0a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 20px solid #ffffff;
+        }
+
+        .badge {
+            background: rgba(0, 112, 243, 0.15);
+            color: var(--accent-blue);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            border: 1px solid rgba(0, 112, 243, 0.3);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1a1a1a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .btn-deploy {
+            width: 100%;
+            padding: 14px;
+            background-color: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-deploy:hover {
+            background-color: #e6e6e6;
+            transform: translateY(-1px);
+        }
+
+        .btn-deploy:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-box {
+            display: none;
+            background: #161616;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .preview-link {
+            color: var(--accent-green);
+            text-decoration: none;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .preview-link:hover {
+            text-decoration: underline;
+        }
+
+        .terminal-card {
+            background-color: var(--terminal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #141414;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .dot.red { background-color: #ff5f56; }
+        .dot.yellow { background-color: #ffbd2e; }
+        .dot.green { background-color: #27c93f; }
+
+        .terminal-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .terminal-body {
+            padding: 16px;
+            height: 350px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #d1d5db;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .log-time {
+            color: #6b7280;
+            margin-right: 8px;
+        }
+
+        .log-highlight {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .log-error {
+            color: #ef4444;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="triangle"></div>
+                <span>Vercel Clone</span>
+            </div>
+            <div class="badge">Spring Boot + AWS ECS + S3</div>
+        </header>
+
+        <div class="card">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 16px;">Deploy a New Project</h2>
+            
+            <div class="form-group">
+                <label for="gitUrl">GitHub Repository URL</label>
+                <input type="text" id="gitUrl" placeholder="https://github.com/shivam-sky-57/sample.git" value="https://github.com/shivam-sky-57/sample.git">
+            </div>
+
+            <div class="form-group">
+                <label for="customSlug">Custom Subdomain / Slug (Optional)</label>
+                <input type="text" id="customSlug" placeholder="e.g. test-site-01 (leave empty for auto-generated slug)">
+            </div>
+
+            <button id="deployBtn" class="btn-deploy" onclick="handleDeploy()">
+                <span>🚀 Deploy Project</span>
+            </button>
+
+            <div id="resultBox" class="result-box">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Deployment Created:</div>
+                <div style="font-size: 1rem;">
+                    🌐 Live Preview URL: <a id="previewLink" class="preview-link" href="#" target="_blank"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="terminal-card">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <div class="terminal-title" id="terminalStatus">Build Logs — Standing By</div>
+                <div style="font-size: 0.75rem; color: #666;" id="connStatus">● Disconnected</div>
+            </div>
+            <div class="terminal-body" id="terminalBody">
+                <div class="log-entry" style="color: #6b7280;">Logs will stream here in real-time once you hit Deploy...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let activeEventSource = null;
+
+        function addLog(message, isHighlight = false, isError = false) {
+            const terminal = document.getElementById('terminalBody');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'log-time';
+            timeSpan.innerText = new Date().toLocaleTimeString();
+
+            const textSpan = document.createElement('span');
+            if (isHighlight) textSpan.className = 'log-highlight';
+            if (isError) textSpan.className = 'log-error';
+            textSpan.innerText = message;
+
+            entry.appendChild(timeSpan);
+            entry.appendChild(textSpan);
+            terminal.appendChild(entry);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        async function handleDeploy() {
+            const gitUrl = document.getElementById('gitUrl').value.trim();
+            const slug = document.getElementById('customSlug').value.trim();
+            const deployBtn = document.getElementById('deployBtn');
+
+            if (!gitUrl) {
+                alert('Please enter a GitHub repository URL');
+                return;
+            }
+
+            deployBtn.disabled = true;
+            deployBtn.innerText = '⏳ Provisioning Build Task...';
+
+            const terminal = document.getElementById('terminalBody');
+            terminal.innerHTML = '';
+            addLog('Submitting deployment request for: ' + gitUrl);
+
+            try {
+                const response = await fetch('/project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gitUrl, slug: slug || undefined })
+                });
+
+                const data = await response.json();
+                if (data.status === 'queued') {
+                    const projectSlug = data.data.projectSlug;
+                    const previewUrl = data.data.url;
+
+                    document.getElementById('resultBox').style.display = 'block';
+                    const link = document.getElementById('previewLink');
+                    link.href = previewUrl;
+                    link.innerText = previewUrl;
+
+                    document.getElementById('terminalStatus').innerText = 'Streaming Logs for: ' + projectSlug;
+
+                    addLog('✅ Deployment Queued! Slug: ' + projectSlug, true);
+                    addLog('🔗 Target Preview URL: ' + previewUrl);
+
+                    // Subscribe to real-time logs via WebSocket STOMP
+                    subscribeToLogs(projectSlug);
+                } else {
+                    addLog('❌ Failed: ' + JSON.stringify(data), false, true);
+                }
+            } catch (err) {
+                addLog('❌ Deployment error: ' + err.message, false, true);
+            } finally {
+                deployBtn.disabled = false;
+                deployBtn.innerText = '🚀 Deploy Project';
+            }
+        }
+
+        function subscribeToLogs(projectId) {
+            // Method 1: WebSocket / STOMP
+            try {
+                const socket = new SockJS('/ws');
+                stompClient = Stomp.over(socket);
+                stompClient.debug = null; // Disable debug noise
+
+                stompClient.connect({}, function (frame) {
+                    document.getElementById('connStatus').innerText = '● Connected (WebSocket)';
+                    document.getElementById('connStatus').style.color = '#50e3c2';
+
+                    stompClient.subscribe('/topic/logs/' + projectId, function (messageOutput) {
+                        const payload = JSON.parse(messageOutput.body);
+                        const logText = payload.log;
+                        const isDone = logText.includes('Done...') || logText.includes('DEPLOYMENT_COMPLETE') || logText.includes('successfully');
+                        const isErr = logText.includes('ERROR') || logText.includes('FAILED') || logText.includes('fatal');
+                        addLog(logText, isDone, isErr);
+                    });
+                }, function (error) {
+                    console.warn('WebSocket connection fallback to SSE:', error);
+                    subscribeViaSSE(projectId);
+                });
+            } catch (e) {
+                subscribeViaSSE(projectId);
+            }
+        }
+
+        function subscribeViaSSE(projectId) {
+            if (activeEventSource) activeEventSource.close();
+
+            activeEventSource = new EventSource('/project/' + projectId + "/logs/stream");
+            document.getElementById('connStatus').innerText = '● Connected (SSE)';
+            document.getElementById('connStatus').style.color = '#50e3c2';
+
+            activeEventSource.addEventListener('log', function(event) {
+                const logText = event.data;
+                const isDone = logText.includes('Done...') || logText.includes('DEPLOYMENT_COMPLETE') || logText.includes('successfully');
+                const isErr = logText.includes('ERROR') || logText.includes('FAILED') || logText.includes('fatal');
+                addLog(logText, isDone, isErr);
+            });
+
+            activeEventSource.onerror = function() {
+                document.getElementById('connStatus').innerText = '● Stream Closed';
+                document.getElementById('connStatus').style.color = '#6b7280';
+                activeEventSource.close();
+            };
+        }
+    </script>
+</body>
+</html>

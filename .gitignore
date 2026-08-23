@@ -1,0 +1,26 @@
+# Maven build outputs
+target/
+**/target/
+*.jar
+*.war
+*.class
+
+# IDE & OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs & temporary files
+*.log
+logs/
+output/
+**/output/
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+application-local.properties
+application-secret.properties
