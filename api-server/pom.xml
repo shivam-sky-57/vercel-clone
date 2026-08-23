@@ -6,23 +6,21 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.7</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.vercel</groupId>
-	<artifactId>build-server</artifactId>
+	<artifactId>api-server</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>build-server</name>
-	<description>Vercel Clone Build Worker without Redis (Pure AWS S3)</description>
+	<name>api-server</name>
+	<description>Vercel Clone API Server, ECS Orchestrator and Real-time Log Subscriber</description>
 
 	<properties>
 		<java.version>21</java.version>
 		<aws.sdk.version>2.25.16</aws.sdk.version>
-		<tika.version>2.9.2</tika.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
-			<!-- AWS SDK BOM to manage all AWS v2 versions -->
 			<dependency>
 				<groupId>software.amazon.awssdk</groupId>
 				<artifactId>bom</artifactId>
@@ -34,10 +32,28 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<!-- Core Spring Boot Starter -->
+		<!-- Spring MVC Web -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<!-- Spring WebSocket & STOMP for Real-time Log Streaming -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
+		<!-- Spring Data Redis (Lettuce client for Redis Pub/Sub Log Subscription) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+		<!-- AWS SDK v2 for ECS Task Orchestration -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>ecs</artifactId>
 		</dependency>
 
 		<!-- Lombok -->
@@ -47,27 +63,7 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- AWS S3 SDK v2 (For uploading build artifacts to S3) -->
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>s3</artifactId>
-		</dependency>
-
-		<!-- Jedis (Direct Redis Client for real-time log publishing) -->
-		<dependency>
-			<groupId>redis.clients</groupId>
-			<artifactId>jedis</artifactId>
-			<version>5.1.2</version>
-		</dependency>
-
-		<!-- Apache Tika (MIME Type Detection for .js, .css, .html, .svg, etc.) -->
-		<dependency>
-			<groupId>org.apache.tika</groupId>
-			<artifactId>tika-core</artifactId>
-			<version>${tika.version}</version>
-		</dependency>
-
-		<!-- Test dependency -->
+		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -100,24 +96,8 @@
 							</annotationProcessorPaths>
 						</configuration>
 					</execution>
-					<execution>
-						<id>default-testCompile</id>
-						<phase>test-compile</phase>
-						<goals>
-							<goal>testCompile</goal>
-						</goals>
-						<configuration>
-							<annotationProcessorPaths>
-								<path>
-									<groupId>org.projectlombok</groupId>
-									<artifactId>lombok</artifactId>
-								</path>
-							</annotationProcessorPaths>
-						</configuration>
-					</execution>
 				</executions>
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

@@ -19,13 +19,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class S3UploaderService {
 
     private final S3Client s3Client;
+    private final RedisLogPublisher logPublisher;
     private final Tika tika = new Tika();
 
     @Value("${s3.bucket.name:${S3_BUCKET_NAME:vercel-clone-outputs}}")
     private String bucketName;
 
     public void uploadDirectory(String projectId, Path buildOutputDir) throws Exception {
-        log.info("Starting upload of static assets to S3 bucket: {}", bucketName);
+        logPublisher.log("Starting upload of static assets to S3 bucket: " + bucketName);
 
         if (!Files.exists(buildOutputDir)) {
             throw new IllegalArgumentException("Build output directory does not exist: " + buildOutputDir);
@@ -40,7 +41,7 @@ public class S3UploaderService {
                     String s3Key = "__outputs/" + projectId + "/" + relativePath;
                     String mimeType = determineContentType(filePath, relativePath);
 
-                    log.info("Uploading: {} -> S3 Key: {} [{}]", relativePath, s3Key, mimeType);
+                    logPublisher.log("Uploading: " + relativePath + " [" + mimeType + "]");
 
                     PutObjectRequest putRequest = PutObjectRequest.builder()
                             .bucket(bucketName)
@@ -51,13 +52,13 @@ public class S3UploaderService {
                     s3Client.putObject(putRequest, RequestBody.fromFile(filePath));
                     fileCount.incrementAndGet();
                 } catch (Exception e) {
-                    log.error("Failed uploading file: {}", filePath, e);
+                    logPublisher.log("[ERROR] Failed uploading " + filePath + ": " + e.getMessage());
                     throw new RuntimeException("S3 upload failed for: " + filePath, e);
                 }
             });
         }
 
-        log.info("S3 upload complete! Total files uploaded: {}", fileCount.get());
+        logPublisher.log("S3 upload complete! Total files uploaded: " + fileCount.get());
     }
 
     private String determineContentType(Path path, String relativePath) {

@@ -1,6 +1,7 @@
 package com.vercel.build_server.runner;
 
 import com.vercel.build_server.service.CommandExecutor;
+import com.vercel.build_server.service.RedisLogPublisher;
 import com.vercel.build_server.service.S3UploaderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import java.io.File;
 @RequiredArgsConstructor
 public class BuildTaskRunner implements CommandLineRunner {
 
+    private final RedisLogPublisher logPublisher;
     private final CommandExecutor commandExecutor;
     private final S3UploaderService s3UploaderService;
     private final ApplicationContext applicationContext;
@@ -41,15 +43,15 @@ public class BuildTaskRunner implements CommandLineRunner {
 
         int exitCode = 0;
         try {
-            log.info("==================================================");
-            log.info("Executing Build for Project: {}", projectId);
-            log.info("Git Repository URL: {}", gitRepositoryUrl);
-            log.info("==================================================");
+            logPublisher.log("==================================================");
+            logPublisher.log("🚀 Executing Build for Project: " + projectId);
+            logPublisher.log("📦 Git Repository URL: " + gitRepositoryUrl);
+            logPublisher.log("==================================================");
 
             File workingDir = resolveWorkingDirectory();
 
             // 1. Clone Git Repository
-            log.info("Step 1/4: Cloning Git repository...");
+            logPublisher.log("Step 1/4: Cloning Git repository...");
             int cloneStatus = commandExecutor.runCommand(
                     "git clone " + gitRepositoryUrl + " " + workingDir.getAbsolutePath(),
                     null
@@ -59,14 +61,14 @@ public class BuildTaskRunner implements CommandLineRunner {
             }
 
             // 2. Install NPM dependencies
-            log.info("Step 2/4: Running npm install...");
+            logPublisher.log("Step 2/4: Running npm install...");
             int installStatus = commandExecutor.runCommand("npm install", workingDir);
             if (installStatus != 0) {
                 throw new RuntimeException("npm install failed with exit code: " + installStatus);
             }
 
             // 3. Compile frontend build
-            log.info("Step 3/4: Running npm run build...");
+            logPublisher.log("Step 3/4: Running npm run build...");
             int buildStatus = commandExecutor.runCommand("npm run build", workingDir);
             if (buildStatus != 0) {
                 throw new RuntimeException("npm run build failed with exit code: " + buildStatus);
@@ -82,15 +84,16 @@ public class BuildTaskRunner implements CommandLineRunner {
             }
 
             // 5. Upload files to AWS S3 (__outputs/<PROJECT_ID>/...)
-            log.info("Step 4/4: Uploading static files to AWS S3...");
+            logPublisher.log("Step 4/4: Uploading static files to AWS S3...");
             s3UploaderService.uploadDirectory(projectId, targetFolder.toPath());
 
-            log.info("==================================================");
-            log.info("Done... Project {} deployed successfully to S3!", projectId);
-            log.info("==================================================");
+            logPublisher.log("==================================================");
+            logPublisher.log("🎉 Done... Project " + projectId + " deployed successfully to S3!");
+            logPublisher.log("==================================================");
 
         } catch (Exception e) {
             log.error("Fatal Build Error: {}", e.getMessage(), e);
+            logPublisher.log("❌ Fatal Build Error: " + e.getMessage());
             exitCode = 1;
         } finally {
             final int finalExitCode = exitCode;
@@ -103,9 +106,11 @@ public class BuildTaskRunner implements CommandLineRunner {
 
     private File resolveWorkingDirectory() {
         File dir = new File(workspaceDirConfig);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        if (dir.exists()) {
+            log.info("Cleaning up existing workspace directory from previous test: {}", dir.getAbsolutePath());
+            org.springframework.util.FileSystemUtils.deleteRecursively(dir);
         }
+        dir.mkdirs();
         return dir;
     }
 

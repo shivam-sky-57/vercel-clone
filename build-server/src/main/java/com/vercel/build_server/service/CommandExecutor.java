@@ -1,5 +1,6 @@
 package com.vercel.build_server.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +12,13 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CommandExecutor {
 
+    private final RedisLogPublisher logPublisher;
+
     public int runCommand(String command, File workingDirectory) throws Exception {
-        log.info(">> Executing command: {}", command);
+        logPublisher.log(">> Executing command: " + command);
 
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         ProcessBuilder processBuilder;
@@ -37,10 +41,10 @@ public class CommandExecutor {
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    logPublisher.log(line);
                 }
             } catch (Exception e) {
-                log.error("Failed to read process stdout: {}", e.getMessage());
+                logPublisher.log("[ERROR] Failed reading stdout: " + e.getMessage());
             }
         });
 
@@ -50,10 +54,10 @@ public class CommandExecutor {
                     new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.err.println(line);
+                    logPublisher.log(line);
                 }
             } catch (Exception e) {
-                log.error("Failed to read process stderr: {}", e.getMessage());
+                logPublisher.log("[ERROR] Failed reading stderr: " + e.getMessage());
             }
         });
 
@@ -61,7 +65,7 @@ public class CommandExecutor {
         CompletableFuture.allOf(stdoutFuture, stderrFuture).join();
 
         int exitCode = process.waitFor();
-        log.info(">> Command finished with exit code: {}", exitCode);
+        logPublisher.log(">> Command finished with exit code: " + exitCode);
         return exitCode;
     }
 }
