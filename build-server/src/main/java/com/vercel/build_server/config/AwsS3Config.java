@@ -1,5 +1,6 @@
 package com.vercel.build_server.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,19 +13,20 @@ import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
 import java.net.URI;
 
+@Slf4j
 @Configuration
 public class AwsS3Config {
 
-    @Value("${aws.region:ap-south-1}")
+    @Value("${aws.region:${AWS_REGION:ap-south-1}}")
     private String awsRegion;
 
-    @Value("${aws.access-key-id:}")
+    @Value("${aws.access-key-id:${AWS_ACCESS_KEY_ID:}}")
     private String accessKey;
 
-    @Value("${aws.secret-access-key:}")
+    @Value("${aws.secret-access-key:${AWS_SECRET_ACCESS_KEY:}}")
     private String secretKey;
 
-    @Value("${aws.s3.endpoint:}")
+    @Value("${aws.s3.endpoint:${AWS_ENDPOINT:}}")
     private String endpointOverride;
 
     @Bean
@@ -32,12 +34,19 @@ public class AwsS3Config {
         S3ClientBuilder builder = S3Client.builder()
                 .region(Region.of(awsRegion));
 
-        // If explicit access keys are provided, use them; otherwise use default AWS provider chain (ECS Task Role / IAM)
-        if (accessKey != null && !accessKey.isBlank() && secretKey != null && !secretKey.isBlank()) {
+        String envAccessKey = System.getenv("AWS_ACCESS_KEY_ID");
+        String envSecretKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+        String finalAccessKey = (accessKey != null && !accessKey.isBlank()) ? accessKey : envAccessKey;
+        String finalSecretKey = (secretKey != null && !secretKey.isBlank()) ? secretKey : envSecretKey;
+
+        if (finalAccessKey != null && !finalAccessKey.isBlank() && finalSecretKey != null && !finalSecretKey.isBlank()) {
+            log.info("Configuring S3 Client with explicit StaticCredentialsProvider for access key: {}***", 
+                    finalAccessKey.substring(0, Math.min(6, finalAccessKey.length())));
             builder.credentialsProvider(StaticCredentialsProvider.create(
-                    AwsBasicCredentials.create(accessKey, secretKey)
+                    AwsBasicCredentials.create(finalAccessKey.trim(), finalSecretKey.trim())
             ));
         } else {
+            log.info("Configuring S3 Client with DefaultCredentialsProvider (ECS Task Role / IAM / Profile)");
             builder.credentialsProvider(DefaultCredentialsProvider.create());
         }
 

@@ -18,34 +18,34 @@ public class EcsTaskService {
 
     private final EcsClient ecsClient;
 
-    @Value("${aws.ecs.cluster:vercel-cluster}")
+    @Value("${aws.ecs.cluster:${AWS_ECS_CLUSTER:vercel-cluster}}")
     private String cluster;
 
-    @Value("${aws.ecs.task-definition:vercel-build-task}")
+    @Value("${aws.ecs.task-definition:${AWS_ECS_TASK_DEFINITION:vercel-build-task}}")
     private String taskDefinition;
 
-    @Value("${aws.ecs.container-name:vercel-builder}")
+    @Value("${aws.ecs.container-name:${AWS_ECS_CONTAINER_NAME:vercel-builder}}")
     private String containerName;
 
-    @Value("${aws.ecs.subnets:}")
+    @Value("${aws.ecs.subnets:${AWS_ECS_SUBNETS:}}")
     private String subnets;
 
-    @Value("${aws.ecs.security-groups:}")
+    @Value("${aws.ecs.security-groups:${AWS_ECS_SECURITY_GROUPS:}}")
     private String securityGroups;
 
-    @Value("${s3.bucket.name:shivam-vercel-pro}")
+    @Value("${s3.bucket.name:${S3_BUCKET_NAME:}}")
     private String s3BucketName;
 
-    @Value("${aws.region:ap-south-1}")
+    @Value("${aws.region:${AWS_REGION:ap-south-1}}")
     private String awsRegion;
 
-    @Value("${aws.access-key-id:}")
+    @Value("${aws.access-key-id:${AWS_ACCESS_KEY_ID:}}")
     private String accessKey;
 
-    @Value("${aws.secret-access-key:}")
+    @Value("${aws.secret-access-key:${AWS_SECRET_ACCESS_KEY:}}")
     private String secretKey;
 
-    @Value("${spring.data.redis.url:redis://localhost:6379}")
+    @Value("${spring.data.redis.url:${REDIS_URL:redis://localhost:6379}}")
     private String redisUrl;
 
     public void runBuildTask(String projectId, String gitUrl) {
@@ -60,11 +60,14 @@ public class EcsTaskService {
                     KeyValuePair.builder().name("REDIS_URL").value(redisUrl).build()
             ));
 
-            if (accessKey != null && !accessKey.isBlank()) {
-                envVars.add(KeyValuePair.builder().name("AWS_ACCESS_KEY_ID").value(accessKey).build());
+            String finalAccessKey = (accessKey != null && !accessKey.isBlank()) ? accessKey : System.getenv("AWS_ACCESS_KEY_ID");
+            String finalSecretKey = (secretKey != null && !secretKey.isBlank()) ? secretKey : System.getenv("AWS_SECRET_ACCESS_KEY");
+
+            if (finalAccessKey != null && !finalAccessKey.isBlank()) {
+                envVars.add(KeyValuePair.builder().name("AWS_ACCESS_KEY_ID").value(finalAccessKey).build());
             }
-            if (secretKey != null && !secretKey.isBlank()) {
-                envVars.add(KeyValuePair.builder().name("AWS_SECRET_ACCESS_KEY").value(secretKey).build());
+            if (finalSecretKey != null && !finalSecretKey.isBlank()) {
+                envVars.add(KeyValuePair.builder().name("AWS_SECRET_ACCESS_KEY").value(finalSecretKey).build());
             }
 
             ContainerOverride containerOverride = ContainerOverride.builder()
@@ -125,13 +128,16 @@ public class EcsTaskService {
                     ? redisUrl.replace("localhost", "host.docker.internal")
                     : (redisUrl.contains("127.0.0.1") ? redisUrl.replace("127.0.0.1", "host.docker.internal") : redisUrl);
 
-            String accessKeyEnv = (accessKey != null && !accessKey.isBlank()) 
-                    ? String.format("-e AWS_ACCESS_KEY_ID=\"%s\" ", accessKey) 
-                    : (System.getenv("AWS_ACCESS_KEY_ID") != null ? String.format("-e AWS_ACCESS_KEY_ID=\"%s\" ", System.getenv("AWS_ACCESS_KEY_ID")) : "");
+            String finalAccessKey = (accessKey != null && !accessKey.isBlank()) ? accessKey : System.getenv("AWS_ACCESS_KEY_ID");
+            String finalSecretKey = (secretKey != null && !secretKey.isBlank()) ? secretKey : System.getenv("AWS_SECRET_ACCESS_KEY");
 
-            String secretKeyEnv = (secretKey != null && !secretKey.isBlank()) 
-                    ? String.format("-e AWS_SECRET_ACCESS_KEY=\"%s\" ", secretKey) 
-                    : (System.getenv("AWS_SECRET_ACCESS_KEY") != null ? String.format("-e AWS_SECRET_ACCESS_KEY=\"%s\" ", System.getenv("AWS_SECRET_ACCESS_KEY")) : "");
+            String accessKeyEnv = (finalAccessKey != null && !finalAccessKey.isBlank()) 
+                    ? String.format("-e AWS_ACCESS_KEY_ID=\"%s\" ", finalAccessKey) 
+                    : "";
+
+            String secretKeyEnv = (finalSecretKey != null && !finalSecretKey.isBlank()) 
+                    ? String.format("-e AWS_SECRET_ACCESS_KEY=\"%s\" ", finalSecretKey) 
+                    : "";
 
             String command = String.format(
                     "docker run --rm -d -e PROJECT_ID=\"%s\" -e GIT_REPOSITORY__URL=\"%s\" -e AWS_REGION=\"%s\" -e S3_BUCKET_NAME=\"%s\" -e REDIS_URL=\"%s\" %s%svercel-build-server",

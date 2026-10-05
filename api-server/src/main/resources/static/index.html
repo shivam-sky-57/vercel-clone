@@ -3,20 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vercel Clone - Dashboard & Deployments</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>Deployment App — Cloud Deployment Platform</title>
+    <meta name="description" content="Instant continuous deployment engine powered by Spring Boot, AWS ECS Fargate, AWS S3, and Redis Pub/Sub.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
         :root {
-            --bg-color: #000000;
-            --card-bg: #111111;
-            --border-color: #222222;
+            --bg-main: #000000;
+            --bg-card: #0c0c0c;
+            --bg-card-hover: #121212;
+            --bg-input: #111111;
+            --border-subtle: #222222;
+            --border-focus: #444444;
             --text-primary: #ededed;
-            --text-secondary: #888888;
+            --text-muted: #888888;
+            --text-dim: #555555;
+            --accent-primary: #ffffff;
             --accent-blue: #0070f3;
-            --accent-green: #50e3c2;
-            --terminal-bg: #0a0a0a;
+            --accent-blue-glow: rgba(0, 112, 243, 0.25);
+            --accent-cyan: #50e3c2;
+            --accent-green: #00e699;
+            --accent-amber: #f5a623;
+            --accent-red: #ff453a;
+            --terminal-bg: #070707;
+            --radius-md: 10px;
+            --radius-lg: 14px;
         }
 
         * {
@@ -26,300 +40,892 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-main);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 40px 20px 80px 20px;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(120, 119, 198, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(0, 112, 243, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container {
+        .wrapper {
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
 
+        /* Header */
         header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
-        .logo {
+        .brand-container {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 1.25rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
+            gap: 14px;
         }
 
-        .triangle {
-            width: 0;
-            height: 0;
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-            border-bottom: 20px solid #ffffff;
-        }
-
-        .badge {
-            background: rgba(0, 112, 243, 0.15);
-            color: var(--accent-blue);
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            border: 1px solid rgba(0, 112, 243, 0.3);
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            background: #1a1a1a;
-            border: 1px solid var(--border-color);
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ffffff 0%, #a1a1a1 100%);
             border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+        }
+
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: #000000;
+        }
+
+        .brand-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            background: linear-gradient(180deg, #ffffff 0%, #cccccc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-tags {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .tag-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        /* Main Card */
+        .glass-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            transition: border-color 0.2s ease;
+        }
+
+        .glass-card:focus-within {
+            border-color: var(--border-focus);
+        }
+
+        .card-header-row {
+            margin-bottom: 22px;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        @media (min-width: 768px) {
+            .form-grid-split {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 18px;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper svg {
+            position: absolute;
+            left: 14px;
+            width: 16px;
+            height: 16px;
+            fill: var(--text-dim);
+            pointer-events: none;
+            transition: fill 0.2s ease;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 13px 16px 13px 40px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
             color: #ffffff;
             font-size: 0.95rem;
             font-family: inherit;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
 
-        input[type="text"]:focus {
+        .text-input.no-icon {
+            padding-left: 16px;
+        }
+
+        .text-input:focus {
             border-color: var(--accent-blue);
+            background: #151515;
+            box-shadow: 0 0 0 3px var(--accent-blue-glow);
+        }
+
+        .text-input:focus + svg,
+        .text-input:focus ~ svg {
+            fill: var(--accent-blue);
+        }
+
+        .text-input::placeholder {
+            color: #444444;
         }
 
         .btn-deploy {
             width: 100%;
             padding: 14px;
-            background-color: #ffffff;
+            margin-top: 8px;
+            background: linear-gradient(180deg, #ffffff 0%, #e0e0e0 100%);
             color: #000000;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.12);
         }
 
-        .btn-deploy:hover {
-            background-color: #e6e6e6;
+        .btn-deploy:hover:not(:disabled) {
+            background: #ffffff;
             transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-deploy:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .btn-deploy:disabled {
-            opacity: 0.5;
+            opacity: 0.55;
             cursor: not-allowed;
+            box-shadow: none;
             transform: none;
         }
 
-        .result-box {
+        /* Pipeline Steps Indicator */
+        .pipeline-bar {
             display: none;
-            background: #161616;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 16px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-subtle);
         }
 
-        .preview-link {
+        .steps-container {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 2px solid #333333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            transition: all 0.3s ease;
+        }
+
+        .step-item.active .step-circle {
+            border-color: var(--accent-blue);
+            background: rgba(0, 112, 243, 0.15);
+            color: #ffffff;
+            box-shadow: 0 0 10px var(--accent-blue);
+            animation: pulse-step 1.5s infinite;
+        }
+
+        .step-item.done .step-circle {
+            border-color: var(--accent-green);
+            background: rgba(0, 230, 153, 0.2);
             color: var(--accent-green);
-            text-decoration: none;
+        }
+
+        .step-label {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .step-item.active .step-label {
+            color: var(--text-primary);
             font-weight: 600;
-            word-break: break-all;
         }
 
-        .preview-link:hover {
-            text-decoration: underline;
+        .step-item.done .step-label {
+            color: var(--accent-green);
         }
 
-        .terminal-card {
+        @keyframes pulse-step {
+            0% { box-shadow: 0 0 0 0 rgba(0, 112, 243, 0.5); }
+            70% { box-shadow: 0 0 0 8px rgba(0, 112, 243, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 112, 243, 0); }
+        }
+
+        /* Terminal Window */
+        .terminal-container {
             background-color: var(--terminal-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
             overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
         }
 
         .terminal-header {
-            background: #141414;
-            padding: 12px 16px;
+            background: #111111;
+            padding: 12px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-subtle);
         }
 
-        .terminal-dots {
+        .window-controls {
             display: flex;
-            gap: 6px;
+            gap: 7px;
         }
 
-        .dot {
-            width: 10px;
-            height: 10px;
+        .control-dot {
+            width: 11px;
+            height: 11px;
             border-radius: 50%;
         }
-        .dot.red { background-color: #ff5f56; }
-        .dot.yellow { background-color: #ffbd2e; }
-        .dot.green { background-color: #27c93f; }
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
 
-        .terminal-title {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+        .terminal-status-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .terminal-tab-title {
             font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: -0.01em;
+        }
+
+        .connection-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.74rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .indicator-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+
+        .indicator-dot.online {
+            background: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
         }
 
         .terminal-body {
-            padding: 16px;
-            height: 350px;
+            padding: 18px;
+            height: 380px;
             overflow-y: auto;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            line-height: 1.6;
-            color: #d1d5db;
+            font-size: 0.84rem;
+            line-height: 1.65;
+            color: #d6d6d6;
+            background: #070707;
+            scroll-behavior: smooth;
         }
 
-        .log-entry {
-            margin-bottom: 4px;
+        .terminal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .terminal-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .terminal-body::-webkit-scrollbar-thumb {
+            background: #222222;
+            border-radius: 3px;
+        }
+
+        .log-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 2px;
             word-break: break-word;
         }
 
-        .log-time {
-            color: #6b7280;
-            margin-right: 8px;
+        .log-ts {
+            color: #4a4a4a;
+            user-select: none;
+            flex-shrink: 0;
+            font-size: 0.76rem;
         }
 
-        .log-highlight {
+        .log-text {
+            color: #cccccc;
+            white-space: pre-wrap;
+        }
+
+        .log-text.highlight {
             color: var(--accent-green);
             font-weight: 600;
         }
 
-        .log-error {
-            color: #ef4444;
+        .log-text.error {
+            color: var(--accent-red);
             font-weight: 600;
+        }
+
+        .log-text.info {
+            color: #60a5fa;
+        }
+
+        .log-text.warn {
+            color: var(--accent-amber);
+        }
+
+        /* Post-Deployment Result Section (Displayed ONLY after build completion) */
+        .preview-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .preview-section.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .preview-card {
+            background: linear-gradient(180deg, #0e1614 0%, #0a0e0d 100%);
+            border: 1px solid rgba(0, 230, 153, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: 0 12px 40px rgba(0, 230, 153, 0.08);
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .preview-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 230, 153, 0.12);
+            border: 1px solid rgba(0, 230, 153, 0.4);
+            color: var(--accent-green);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 20px;
+        }
+
+        .preview-content {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .preview-url-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: #060606;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+        }
+
+        .preview-link-text {
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.02rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .preview-link-text:hover {
+            color: var(--accent-green);
+            text-decoration: underline;
+        }
+
+        .preview-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .btn-action {
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-visit {
+            background: var(--accent-green);
+            color: #000000;
+            border: none;
+        }
+
+        .btn-visit:hover {
+            background: #00ffaa;
+            box-shadow: 0 0 12px rgba(0, 230, 153, 0.4);
+        }
+
+        .btn-copy {
+            background: #1c1c1c;
+            color: #d1d1d1;
+            border: 1px solid #333333;
+        }
+
+        .btn-copy:hover {
+            background: #252525;
+            color: #ffffff;
+            border-color: #555555;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-top: 8px;
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+
+        .detail-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            border-top-color: #000000;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="wrapper">
+        <!-- Header -->
         <header>
-            <div class="logo">
-                <div class="triangle"></div>
-                <span>Vercel Clone</span>
+            <div class="brand-container">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L2 20h20L12 2z"/>
+                    </svg>
+                </div>
+                <h1 class="brand-title">Deployment App</h1>
             </div>
-            <div class="badge">Spring Boot + AWS ECS + S3</div>
+            <div class="header-tags">
+                <div class="tag-pill">
+                    <span class="tag-dot"></span>
+                    <span>System Active</span>
+                </div>
+                <div class="tag-pill">
+                    <span>Spring Boot • ECS • S3</span>
+                </div>
+            </div>
         </header>
 
-        <div class="card">
-            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 16px;">Deploy a New Project</h2>
-            
-            <div class="form-group">
-                <label for="gitUrl">GitHub Repository URL</label>
-                <input type="text" id="gitUrl" placeholder="https://github.com/shivam-sky-57/sample.git" value="https://github.com/shivam-sky-57/sample.git">
+        <!-- Deployment Config Card -->
+        <section class="glass-card" aria-label="Deployment Configuration">
+            <div class="card-header-row">
+                <h2 class="card-title">Deploy a New Project</h2>
+                <p class="card-desc">Enter any frontend repository URL to initiate an automated build and instant cloud deployment.</p>
             </div>
 
-            <div class="form-group">
-                <label for="customSlug">Custom Subdomain / Slug (Optional)</label>
-                <input type="text" id="customSlug" placeholder="e.g. test-site-01 (leave empty for auto-generated slug)">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label class="input-label" for="gitUrl">GitHub Repository URL</label>
+                    <div class="input-wrapper">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                        </svg>
+                        <input type="text" id="gitUrl" class="text-input" placeholder="https://github.com/username/repository.git" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="customSlug">Custom Subdomain / Slug (Optional)</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="customSlug" class="text-input no-icon" placeholder="e.g. portfolio-v2 (leave empty for auto-generated slug)" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+
+                <button id="deployBtn" class="btn-deploy" onclick="handleDeploy()">
+                    <span id="deployBtnIcon">⚡</span>
+                    <span id="deployBtnText">Deploy Project</span>
+                </button>
             </div>
 
-            <button id="deployBtn" class="btn-deploy" onclick="handleDeploy()">
-                <span>🚀 Deploy Project</span>
-            </button>
-
-            <div id="resultBox" class="result-box">
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Deployment Created:</div>
-                <div style="font-size: 1rem;">
-                    🌐 Live Preview URL: <a id="previewLink" class="preview-link" href="#" target="_blank"></a>
+            <!-- Pipeline Visualizer -->
+            <div id="pipelineBar" class="pipeline-bar">
+                <div class="steps-container">
+                    <div class="step-item" id="stepClone">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Clone</span>
+                    </div>
+                    <div class="step-item" id="stepInstall">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Dependencies</span>
+                    </div>
+                    <div class="step-item" id="stepBuild">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">Build</span>
+                    </div>
+                    <div class="step-item" id="stepUpload">
+                        <div class="step-circle">4</div>
+                        <span class="step-label">S3 Deploy</span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="terminal-card">
+        <!-- Live Build Terminal -->
+        <section class="terminal-container" aria-label="Build Log Stream">
             <div class="terminal-header">
-                <div class="terminal-dots">
-                    <span class="dot red"></span>
-                    <span class="dot yellow"></span>
-                    <span class="dot green"></span>
+                <div class="window-controls">
+                    <span class="control-dot dot-red"></span>
+                    <span class="control-dot dot-yellow"></span>
+                    <span class="control-dot dot-green"></span>
                 </div>
-                <div class="terminal-title" id="terminalStatus">Build Logs — Standing By</div>
-                <div style="font-size: 0.75rem; color: #666;" id="connStatus">● Disconnected</div>
+                <div class="terminal-tab-title" id="terminalTitle">Build Console — Standing By</div>
+                <div class="terminal-status-info">
+                    <div class="connection-indicator">
+                        <span class="indicator-dot" id="connDot"></span>
+                        <span id="connLabel">Idle</span>
+                    </div>
+                </div>
             </div>
             <div class="terminal-body" id="terminalBody">
-                <div class="log-entry" style="color: #6b7280;">Logs will stream here in real-time once you hit Deploy...</div>
+                <div class="log-line">
+                    <span class="log-ts">--:--:--</span>
+                    <span class="log-text" style="color: #666;">Ready for deployment. Enter a repository URL above to begin.</span>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Deployment Preview Card (Only Revealed AFTER Build Succeeded) -->
+        <section id="previewSection" class="preview-section" aria-label="Deployment Details">
+            <div class="preview-card">
+                <div class="preview-header">
+                    <div class="preview-status-pill">
+                        <span>●</span>
+                        <span>Deployment Live</span>
+                    </div>
+                    <span style="font-size: 0.8rem; color: #888;" id="deployTimestamp">Ready</span>
+                </div>
+
+                <div class="preview-content">
+                    <div class="preview-url-box">
+                        <a id="previewLink" class="preview-link-text" href="#" target="_blank" rel="noopener noreferrer">
+                            <span id="previewUrlLabel">https://...</span>
+                        </a>
+                        <div class="preview-actions">
+                            <button class="btn-action btn-copy" onclick="copyPreviewUrl()" id="copyBtn">
+                                📋 Copy
+                            </button>
+                            <a id="visitBtn" class="btn-action btn-visit" href="#" target="_blank" rel="noopener noreferrer">
+                                Open App ↗
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="details-grid">
+                        <div class="detail-card">
+                            <div class="detail-label">Project Slug</div>
+                            <div class="detail-value" id="metaSlug">-</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value" style="color: var(--accent-green);">Ready & Live</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-label">Cloud Target</div>
+                            <div class="detail-value">AWS S3 + Netty Proxy</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <span>Cloud Deployment Platform &copy; 2026 • Real-time Distributed Build Architecture</span>
+        </footer>
     </div>
 
     <script>
         let stompClient = null;
         let activeEventSource = null;
+        let currentSlug = null;
+        let currentPreviewUrl = null;
+        let isBuildFinished = false;
 
-        function addLog(message, isHighlight = false, isError = false) {
+        function addLogLine(message, type = 'normal') {
             const terminal = document.getElementById('terminalBody');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
+            const line = document.createElement('div');
+            line.className = 'log-line';
 
             const timeSpan = document.createElement('span');
-            timeSpan.className = 'log-time';
+            timeSpan.className = 'log-ts';
             timeSpan.innerText = new Date().toLocaleTimeString();
 
             const textSpan = document.createElement('span');
-            if (isHighlight) textSpan.className = 'log-highlight';
-            if (isError) textSpan.className = 'log-error';
+            textSpan.className = 'log-text';
+            if (type === 'highlight') textSpan.classList.add('highlight');
+            if (type === 'error') textSpan.classList.add('error');
+            if (type === 'info') textSpan.classList.add('info');
+            if (type === 'warn') textSpan.classList.add('warn');
             textSpan.innerText = message;
 
-            entry.appendChild(timeSpan);
-            entry.appendChild(textSpan);
-            terminal.appendChild(entry);
+            line.appendChild(timeSpan);
+            line.appendChild(textSpan);
+            terminal.appendChild(line);
             terminal.scrollTop = terminal.scrollHeight;
+
+            updatePipelineSteps(message);
+        }
+
+        function updatePipelineSteps(message) {
+            const stepClone = document.getElementById('stepClone');
+            const stepInstall = document.getElementById('stepInstall');
+            const stepBuild = document.getElementById('stepBuild');
+            const stepUpload = document.getElementById('stepUpload');
+
+            if (message.includes('Step 1/4') || message.includes('Cloning Git')) {
+                stepClone.className = 'step-item active';
+            } else if (message.includes('Step 2/4') || message.includes('npm install')) {
+                stepClone.className = 'step-item done';
+                stepInstall.className = 'step-item active';
+            } else if (message.includes('Step 3/4') || message.includes('npm run build')) {
+                stepInstall.className = 'step-item done';
+                stepBuild.className = 'step-item active';
+            } else if (message.includes('Step 4/4') || message.includes('Uploading static files')) {
+                stepBuild.className = 'step-item done';
+                stepUpload.className = 'step-item active';
+            } else if (message.includes('deployed successfully') || message.includes('Done...') || message.includes('🎉')) {
+                stepUpload.className = 'step-item done';
+                onDeploymentSuccess();
+            }
+        }
+
+        function onDeploymentSuccess() {
+            if (isBuildFinished) return;
+            isBuildFinished = true;
+
+            const deployBtn = document.getElementById('deployBtn');
+            const btnIcon = document.getElementById('deployBtnIcon');
+            const btnText = document.getElementById('deployBtnText');
+            deployBtn.disabled = false;
+            btnIcon.innerText = '⚡';
+            btnText.innerText = 'Deploy Another Project';
+
+            document.getElementById('terminalTitle').innerText = 'Build Console — Finished ✅';
+
+            // Reveal the preview section with clean URL presentation
+            const previewSection = document.getElementById('previewSection');
+            previewSection.classList.add('visible');
+
+            if (currentPreviewUrl) {
+                const link = document.getElementById('previewLink');
+                const visitBtn = document.getElementById('visitBtn');
+                const label = document.getElementById('previewUrlLabel');
+                link.href = currentPreviewUrl;
+                visitBtn.href = currentPreviewUrl;
+                label.innerText = currentPreviewUrl;
+            }
+
+            if (currentSlug) {
+                document.getElementById('metaSlug').innerText = currentSlug;
+            }
+            document.getElementById('deployTimestamp').innerText = 'Deployed at ' + new Date().toLocaleTimeString();
+
+            // Smooth scroll to the preview card
+            setTimeout(() => {
+                previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 300);
         }
 
         async function handleDeploy() {
             const gitUrl = document.getElementById('gitUrl').value.trim();
             const slug = document.getElementById('customSlug').value.trim();
             const deployBtn = document.getElementById('deployBtn');
+            const btnIcon = document.getElementById('deployBtnIcon');
+            const btnText = document.getElementById('deployBtnText');
 
             if (!gitUrl) {
-                alert('Please enter a GitHub repository URL');
+                alert('Please enter a GitHub repository URL to deploy');
                 return;
             }
 
+            // Reset UI state
+            isBuildFinished = false;
             deployBtn.disabled = true;
-            deployBtn.innerText = '⏳ Provisioning Build Task...';
+            btnIcon.innerHTML = '<span class="spinner"></span>';
+            btnText.innerText = 'Provisioning Build...';
+
+            document.getElementById('pipelineBar').style.display = 'block';
+            ['stepClone', 'stepInstall', 'stepBuild', 'stepUpload'].forEach(id => {
+                document.getElementById(id).className = 'step-item';
+            });
+
+            // Hide previous preview card until this build succeeds
+            const previewSection = document.getElementById('previewSection');
+            previewSection.classList.remove('visible');
 
             const terminal = document.getElementById('terminalBody');
             terminal.innerHTML = '';
-            addLog('Submitting deployment request for: ' + gitUrl);
+
+            addLogLine('Initializing build task for: ' + gitUrl, 'info');
 
             try {
                 const response = await fetch('/project', {
@@ -330,52 +936,45 @@
 
                 const data = await response.json();
                 if (data.status === 'queued') {
-                    const projectSlug = data.data.projectSlug;
-                    const previewUrl = data.data.url;
+                    currentSlug = data.data.projectSlug;
+                    currentPreviewUrl = data.data.url;
 
-                    document.getElementById('resultBox').style.display = 'block';
-                    const link = document.getElementById('previewLink');
-                    link.href = previewUrl;
-                    link.innerText = previewUrl;
+                    document.getElementById('terminalTitle').innerText = 'Streaming Logs for: ' + currentSlug;
+                    addLogLine('✅ Build worker launched. Assigned slug: ' + currentSlug, 'highlight');
+                    addLogLine('⏳ Waiting for compilation logs...', 'normal');
 
-                    document.getElementById('terminalStatus').innerText = 'Streaming Logs for: ' + projectSlug;
-
-                    addLog('✅ Deployment Queued! Slug: ' + projectSlug, true);
-                    addLog('🔗 Target Preview URL: ' + previewUrl);
-
-                    // Subscribe to real-time logs via WebSocket STOMP
-                    subscribeToLogs(projectSlug);
+                    subscribeToLogs(currentSlug);
                 } else {
-                    addLog('❌ Failed: ' + JSON.stringify(data), false, true);
+                    addLogLine('❌ Failed to queue deployment: ' + JSON.stringify(data), 'error');
+                    deployBtn.disabled = false;
+                    btnIcon.innerText = '⚡';
+                    btnText.innerText = 'Deploy Project';
                 }
             } catch (err) {
-                addLog('❌ Deployment error: ' + err.message, false, true);
-            } finally {
+                addLogLine('❌ Request error: ' + err.message, 'error');
                 deployBtn.disabled = false;
-                deployBtn.innerText = '🚀 Deploy Project';
+                btnIcon.innerText = '⚡';
+                btnText.innerText = 'Deploy Project';
             }
         }
 
         function subscribeToLogs(projectId) {
-            // Method 1: WebSocket / STOMP
+            setConnectionStatus(true, 'Connecting...');
+
+            // Primary: WebSocket via SockJS + STOMP
             try {
                 const socket = new SockJS('/ws');
                 stompClient = Stomp.over(socket);
-                stompClient.debug = null; // Disable debug noise
+                stompClient.debug = null; // Suppress debug spam
 
-                stompClient.connect({}, function (frame) {
-                    document.getElementById('connStatus').innerText = '● Connected (WebSocket)';
-                    document.getElementById('connStatus').style.color = '#50e3c2';
-
-                    stompClient.subscribe('/topic/logs/' + projectId, function (messageOutput) {
-                        const payload = JSON.parse(messageOutput.body);
-                        const logText = payload.log;
-                        const isDone = logText.includes('Done...') || logText.includes('DEPLOYMENT_COMPLETE') || logText.includes('successfully');
-                        const isErr = logText.includes('ERROR') || logText.includes('FAILED') || logText.includes('fatal');
-                        addLog(logText, isDone, isErr);
+                stompClient.connect({}, function () {
+                    setConnectionStatus(true, 'Live (WebSocket)');
+                    stompClient.subscribe('/topic/logs/' + projectId, function (msg) {
+                        const payload = JSON.parse(msg.body);
+                        processIncomingLog(payload.log);
                     });
-                }, function (error) {
-                    console.warn('WebSocket connection fallback to SSE:', error);
+                }, function (err) {
+                    console.warn('STOMP connect failed, switching to SSE fallback:', err);
                     subscribeViaSSE(projectId);
                 });
             } catch (e) {
@@ -386,22 +985,52 @@
         function subscribeViaSSE(projectId) {
             if (activeEventSource) activeEventSource.close();
 
-            activeEventSource = new EventSource('/project/' + projectId + "/logs/stream");
-            document.getElementById('connStatus').innerText = '● Connected (SSE)';
-            document.getElementById('connStatus').style.color = '#50e3c2';
+            activeEventSource = new EventSource('/project/' + projectId + '/logs/stream');
+            setConnectionStatus(true, 'Live (SSE)');
 
-            activeEventSource.addEventListener('log', function(event) {
-                const logText = event.data;
-                const isDone = logText.includes('Done...') || logText.includes('DEPLOYMENT_COMPLETE') || logText.includes('successfully');
-                const isErr = logText.includes('ERROR') || logText.includes('FAILED') || logText.includes('fatal');
-                addLog(logText, isDone, isErr);
+            activeEventSource.addEventListener('log', function(e) {
+                processIncomingLog(e.data);
             });
 
             activeEventSource.onerror = function() {
-                document.getElementById('connStatus').innerText = '● Stream Closed';
-                document.getElementById('connStatus').style.color = '#6b7280';
+                setConnectionStatus(false, 'Disconnected');
                 activeEventSource.close();
             };
+        }
+
+        function processIncomingLog(logText) {
+            const isSuccess = logText.includes('Done...') || logText.includes('deployed successfully') || logText.includes('🎉');
+            const isError = logText.includes('ERROR') || logText.includes('FATAL') || logText.includes('Failed') || logText.includes('❌');
+            const isInfo = logText.includes('Step ') || logText.includes('Executing Build');
+
+            let type = 'normal';
+            if (isSuccess) type = 'highlight';
+            else if (isError) type = 'error';
+            else if (isInfo) type = 'info';
+
+            addLogLine(logText, type);
+        }
+
+        function setConnectionStatus(online, text) {
+            const dot = document.getElementById('connDot');
+            const label = document.getElementById('connLabel');
+            if (online) {
+                dot.className = 'indicator-dot online';
+            } else {
+                dot.className = 'indicator-dot';
+            }
+            label.innerText = text;
+        }
+
+        function copyPreviewUrl() {
+            if (!currentPreviewUrl) return;
+            navigator.clipboard.writeText(currentPreviewUrl).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.innerText = '✅ Copied!';
+                setTimeout(() => {
+                    btn.innerText = '📋 Copy';
+                }, 2000);
+            });
         }
     </script>
 </body>
