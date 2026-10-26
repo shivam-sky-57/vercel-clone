@@ -44,13 +44,12 @@ public class BuildTaskRunner implements CommandLineRunner {
         int exitCode = 0;
         try {
             logPublisher.log("==================================================");
-            logPublisher.log("🚀 Executing Build for Project: " + projectId);
-            logPublisher.log("📦 Git Repository URL: " + gitRepositoryUrl);
+            logPublisher.log("Executing Build for Project: " + projectId);
+            logPublisher.log("Git Repository URL: " + gitRepositoryUrl);
             logPublisher.log("==================================================");
 
             File workingDir = resolveWorkingDirectory();
 
-            // 1. Clone Git Repository
             logPublisher.log("Step 1/4: Cloning Git repository...");
             int cloneStatus = commandExecutor.runCommand(
                     "git clone " + gitRepositoryUrl + " " + workingDir.getAbsolutePath(),
@@ -60,21 +59,18 @@ public class BuildTaskRunner implements CommandLineRunner {
                 throw new RuntimeException("Git clone failed with exit code: " + cloneStatus);
             }
 
-            // 2. Install NPM dependencies
             logPublisher.log("Step 2/4: Running npm install...");
             int installStatus = commandExecutor.runCommand("npm install", workingDir);
             if (installStatus != 0) {
                 throw new RuntimeException("npm install failed with exit code: " + installStatus);
             }
 
-            // 3. Compile frontend build
             logPublisher.log("Step 3/4: Running npm run build...");
             int buildStatus = commandExecutor.runCommand("npm run build", workingDir);
             if (buildStatus != 0) {
                 throw new RuntimeException("npm run build failed with exit code: " + buildStatus);
             }
 
-            // 4. Locate dist/ or build/ output folder
             File distFolder = new File(workingDir, "dist");
             File buildFolder = new File(workingDir, "build");
             File targetFolder = distFolder.exists() ? distFolder : (buildFolder.exists() ? buildFolder : null);
@@ -83,17 +79,16 @@ public class BuildTaskRunner implements CommandLineRunner {
                 throw new RuntimeException("Build succeeded, but neither 'dist' nor 'build' folder was generated!");
             }
 
-            // 5. Upload files to AWS S3 (__outputs/<PROJECT_ID>/...)
-            logPublisher.log("Step 4/4: Uploading static files to AWS S3...");
+            logPublisher.log("Step 4/4: Deploying static files...");
             s3UploaderService.uploadDirectory(projectId, targetFolder.toPath());
 
             logPublisher.log("==================================================");
-            logPublisher.log("🎉 Done... Project " + projectId + " deployed successfully to S3!");
+            logPublisher.log("Project " + projectId + " deployed successfully.");
             logPublisher.log("==================================================");
 
         } catch (Exception e) {
             log.error("Fatal Build Error: {}", e.getMessage(), e);
-            logPublisher.log("❌ Fatal Build Error: " + e.getMessage());
+            logPublisher.log("Build error: " + e.getMessage());
             exitCode = 1;
         } finally {
             final int finalExitCode = exitCode;

@@ -86,7 +86,6 @@ public class EcsTaskService {
                     .count(1)
                     .overrides(taskOverride);
 
-            // Configure VPC networking if subnets are provided
             if (subnets != null && !subnets.isBlank()) {
                 List<String> subnetList = Arrays.stream(subnets.split(","))
                         .map(String::trim)
@@ -113,7 +112,6 @@ public class EcsTaskService {
 
         } catch (Exception e) {
             log.warn("AWS ECS RunTask skipped: {}. Falling back to local Docker build worker.", e.getMessage());
-            // Fallback for local testing if ECS cluster is not yet created on AWS
             runLocalDockerFallback(projectId, gitUrl);
         }
     }
@@ -123,7 +121,6 @@ public class EcsTaskService {
         try {
             boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
             
-            // In Docker on Windows/Mac, containers reach the host via host.docker.internal
             String containerRedisUrl = redisUrl.contains("localhost") 
                     ? redisUrl.replace("localhost", "host.docker.internal")
                     : (redisUrl.contains("127.0.0.1") ? redisUrl.replace("127.0.0.1", "host.docker.internal") : redisUrl);

@@ -17,7 +17,6 @@ public class RedisConfig {
     ) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-        // Subscribe to all project log channels: logs:*
         container.addMessageListener(logSubscriberService, new PatternTopic("logs:*"));
         return container;
     }

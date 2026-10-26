@@ -36,15 +36,12 @@ public class RedisLogPublisher {
     }
 
     public void log(String message) {
-        // Output to container stdout
         System.out.println(message);
 
-        // Stream real-time to Redis Pub/Sub
         if (jedisPool != null) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.publish(channel, message);
             } catch (Exception e) {
-                // Redis publish error - non fatal
             }
         }
     }

@@ -35,7 +35,6 @@ public class CommandExecutor {
 
         Process process = processBuilder.start();
 
-        // Asynchronously capture stdout
         CompletableFuture<Void> stdoutFuture = CompletableFuture.runAsync(() -> {
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
@@ -48,7 +47,6 @@ public class CommandExecutor {
             }
         });
 
-        // Asynchronously capture stderr
         CompletableFuture<Void> stderrFuture = CompletableFuture.runAsync(() -> {
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
@@ -61,7 +59,6 @@ public class CommandExecutor {
             }
         });
 
-        // Wait for both output streams to flush
         CompletableFuture.allOf(stdoutFuture, stderrFuture).join();
 
         int exitCode = process.waitFor();

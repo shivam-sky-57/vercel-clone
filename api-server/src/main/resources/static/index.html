@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deployment App — Cloud Deployment Platform</title>
-    <meta name="description" content="Instant continuous deployment engine powered by Spring Boot, AWS ECS Fargate, AWS S3, and Redis Pub/Sub.">
+    <meta name="description" content="Deployment engine powered by Spring Boot and Redis Pub/Sub.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -671,7 +671,7 @@
                     <span>System Active</span>
                 </div>
                 <div class="tag-pill">
-                    <span>Spring Boot • ECS • S3</span>
+                    <span>Spring Boot • Deployment</span>
                 </div>
             </div>
         </header>
@@ -702,7 +702,7 @@
                 </div>
 
                 <button id="deployBtn" class="btn-deploy" onclick="handleDeploy()">
-                    <span id="deployBtnIcon">⚡</span>
+                    <span id="deployBtnIcon"></span>
                     <span id="deployBtnText">Deploy Project</span>
                 </button>
             </div>
@@ -724,7 +724,7 @@
                     </div>
                     <div class="step-item" id="stepUpload">
                         <div class="step-circle">4</div>
-                        <span class="step-label">S3 Deploy</span>
+                        <span class="step-label">Deploy</span>
                     </div>
                 </div>
             </div>
@@ -772,10 +772,10 @@
                         </a>
                         <div class="preview-actions">
                             <button class="btn-action btn-copy" onclick="copyPreviewUrl()" id="copyBtn">
-                                📋 Copy
+                                Copy
                             </button>
                             <a id="visitBtn" class="btn-action btn-visit" href="#" target="_blank" rel="noopener noreferrer">
-                                Open App ↗
+                                Open App
                             </a>
                         </div>
                     </div>
@@ -790,8 +790,8 @@
                             <div class="detail-value" style="color: var(--accent-green);">Ready & Live</div>
                         </div>
                         <div class="detail-card">
-                            <div class="detail-label">Cloud Target</div>
-                            <div class="detail-value">AWS S3 + Netty Proxy</div>
+                            <div class="detail-label">Target</div>
+                            <div class="detail-value">Deployment Proxy</div>
                         </div>
                     </div>
                 </div>
@@ -849,10 +849,10 @@
             } else if (message.includes('Step 3/4') || message.includes('npm run build')) {
                 stepInstall.className = 'step-item done';
                 stepBuild.className = 'step-item active';
-            } else if (message.includes('Step 4/4') || message.includes('Uploading static files')) {
+            } else if (message.includes('Step 4/4') || message.includes('Deploying static files') || message.includes('Uploading static files')) {
                 stepBuild.className = 'step-item done';
                 stepUpload.className = 'step-item active';
-            } else if (message.includes('deployed successfully') || message.includes('Done...') || message.includes('🎉')) {
+            } else if (message.includes('deployed successfully') || message.includes('Done...') || message.includes('Build finished')) {
                 stepUpload.className = 'step-item done';
                 onDeploymentSuccess();
             }
@@ -866,10 +866,10 @@
             const btnIcon = document.getElementById('deployBtnIcon');
             const btnText = document.getElementById('deployBtnText');
             deployBtn.disabled = false;
-            btnIcon.innerText = '⚡';
+            btnIcon.innerText = '';
             btnText.innerText = 'Deploy Another Project';
 
-            document.getElementById('terminalTitle').innerText = 'Build Console — Finished ✅';
+            document.getElementById('terminalTitle').innerText = 'Build Console — Completed';
 
             // Reveal the preview section with clean URL presentation
             const previewSection = document.getElementById('previewSection');
@@ -940,20 +940,20 @@
                     currentPreviewUrl = data.data.url;
 
                     document.getElementById('terminalTitle').innerText = 'Streaming Logs for: ' + currentSlug;
-                    addLogLine('✅ Build worker launched. Assigned slug: ' + currentSlug, 'highlight');
-                    addLogLine('⏳ Waiting for compilation logs...', 'normal');
+                    addLogLine('Build worker launched. Assigned slug: ' + currentSlug, 'highlight');
+                    addLogLine('Waiting for compilation logs...', 'normal');
 
                     subscribeToLogs(currentSlug);
                 } else {
-                    addLogLine('❌ Failed to queue deployment: ' + JSON.stringify(data), 'error');
+                    addLogLine('Failed to queue deployment: ' + JSON.stringify(data), 'error');
                     deployBtn.disabled = false;
-                    btnIcon.innerText = '⚡';
+                    btnIcon.innerText = '';
                     btnText.innerText = 'Deploy Project';
                 }
             } catch (err) {
-                addLogLine('❌ Request error: ' + err.message, 'error');
+                addLogLine('Request error: ' + err.message, 'error');
                 deployBtn.disabled = false;
-                btnIcon.innerText = '⚡';
+                btnIcon.innerText = '';
                 btnText.innerText = 'Deploy Project';
             }
         }
@@ -999,8 +999,8 @@
         }
 
         function processIncomingLog(logText) {
-            const isSuccess = logText.includes('Done...') || logText.includes('deployed successfully') || logText.includes('🎉');
-            const isError = logText.includes('ERROR') || logText.includes('FATAL') || logText.includes('Failed') || logText.includes('❌');
+            const isSuccess = logText.includes('Done...') || logText.includes('deployed successfully') || logText.includes('Build finished');
+            const isError = logText.includes('ERROR') || logText.includes('FATAL') || logText.includes('Failed') || logText.includes('error:');
             const isInfo = logText.includes('Step ') || logText.includes('Executing Build');
 
             let type = 'normal';
@@ -1026,9 +1026,9 @@
             if (!currentPreviewUrl) return;
             navigator.clipboard.writeText(currentPreviewUrl).then(() => {
                 const btn = document.getElementById('copyBtn');
-                btn.innerText = '✅ Copied!';
+                btn.innerText = 'Copied!';
                 setTimeout(() => {
-                    btn.innerText = '📋 Copy';
+                    btn.innerText = 'Copy';
                 }, 2000);
             });
         }

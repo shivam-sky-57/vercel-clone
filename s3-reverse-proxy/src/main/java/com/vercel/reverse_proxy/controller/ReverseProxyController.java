@@ -37,7 +37,7 @@ public class ReverseProxyController {
         this.webClient = WebClient.builder()
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(50 * 1024 * 1024))
                 .build();
-        log.info("Initialized S3 Reverse Proxy with Target Base URL: {}", this.resolvedS3BaseUrl);
+        log.info("Initialized Reverse Proxy with Target Base URL: {}", this.resolvedS3BaseUrl);
     }
 
     @RequestMapping("/**")
@@ -54,9 +54,9 @@ public class ReverseProxyController {
                     + ".box{background:#161616;border:1px solid #333;padding:40px;border-radius:12px;text-align:center;max-width:500px;}"
                     + "a{color:#0070f3;text-decoration:none;font-weight:bold;} a:hover{text-decoration:underline;}"
                     + "</style></head><body><div class='box'>"
-                    + "<h2>⚡ Deployment App — S3 Reverse Proxy</h2>"
+                    + "<h2>Deployment App - Reverse Proxy</h2>"
                     + "<p style='color:#888;'>Access your deployed project via its unique subdomain or query parameter:</p>"
-                    + "<p>👉 <code>http://&lt;project-slug&gt;.localhost:8000</code></p>"
+                    + "<p><code>http://&lt;project-slug&gt;.localhost:8000</code></p>"
                     + "</div></body></html>";
             return Mono.just(ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
@@ -65,7 +65,7 @@ public class ReverseProxyController {
 
         if (resolvedS3BaseUrl == null || resolvedS3BaseUrl.isBlank()) {
             String errHtml = "<!DOCTYPE html><html><body style='font-family:sans-serif;background:#111;color:#fff;padding:40px;'>"
-                    + "<h2>⚠️ S3 Bucket Not Configured</h2>"
+                    + "<h2>Deployment Storage Not Configured</h2>"
                     + "<p>Please set <code>S3_BUCKET_NAME</code> or <code>s3.bucket.name</code> in environment variables or <code>application-secret.properties</code>.</p>"
                     + "</body></html>";
             return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -73,7 +73,6 @@ public class ReverseProxyController {
                     .body(errHtml.getBytes()));
         }
 
-        // Map root / to /index.html
         String resolvedPath = (path == null || path.equals("/") || path.isBlank()) ? "/index.html" : path;
         String targetUrl = resolvedS3BaseUrl + "/" + slug + (resolvedPath.startsWith("/") ? resolvedPath : "/" + resolvedPath);
 
@@ -81,14 +80,13 @@ public class ReverseProxyController {
 
         return fetchAndForward(targetUrl)
                 .flatMap(response -> {
-                    // SPA Fallback: If route is 404 or 403 and is not an asset/file (no file extension like .js, .css), fallback to /index.html
                     if (response.getStatusCode().is4xxClientError() && !resolvedPath.contains(".")) {
                         String indexPath = resolvedS3BaseUrl + "/" + slug + "/index.html";
                         log.info("SPA route detected (4xx for {}). Falling back to: {}", resolvedPath, indexPath);
                         return fetchAndForward(indexPath)
                                 .map(indexRes -> ResponseEntity.status(HttpStatus.OK)
-                                        .headers(indexRes.getHeaders())
-                                        .body(indexRes.getBody()));
+                                         .headers(indexRes.getHeaders())
+                                         .body(indexRes.getBody()));
                     }
                     return Mono.just(response);
                 })
@@ -119,7 +117,6 @@ public class ReverseProxyController {
     }
 
     private String resolveSlug(ServerHttpRequest request, String host) {
-        // 1. Check Subdomain (e.g. fast-cloud-760.localhost:8000 -> fast-cloud-760)
         if (host != null) {
             String hostWithoutPort = host.contains(":") ? host.split(":")[0] : host;
             String[] parts = hostWithoutPort.split("\\.");
@@ -128,7 +125,6 @@ public class ReverseProxyController {
             }
         }
 
-        // 2. Check query parameter (?__slug= or ?slug=)
         String querySlug = request.getQueryParams().getFirst("__slug");
         if (querySlug == null || querySlug.isBlank()) {
             querySlug = request.getQueryParams().getFirst("slug");
@@ -137,7 +133,6 @@ public class ReverseProxyController {
             return querySlug.trim();
         }
 
-        // 3. Check custom headers
         String headerSlug = request.getHeaders().getFirst("X-Project-Slug");
         if (headerSlug != null && !headerSlug.isBlank()) {
             return headerSlug.trim();

@@ -41,10 +41,8 @@ public class ProjectController {
 
         log.info("Received Deployment Request: Git=[{}] -> Slug=[{}]", request.getGitUrl(), projectSlug);
 
-        // 1. Trigger AWS ECS Task / Build Worker
         ecsTaskService.runBuildTask(projectSlug, request.getGitUrl());
 
-        // 2. Return Queued Response with WebSocket topic and SSE stream URL
         DeployResponse response = DeployResponse.builder()
                 .status("queued")
                 .data(DeployResponse.DeploymentData.builder()

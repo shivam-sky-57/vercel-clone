@@ -22,7 +22,6 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<!-- AWS SDK BOM to manage all AWS v2 versions -->
 			<dependency>
 				<groupId>software.amazon.awssdk</groupId>
 				<artifactId>bom</artifactId>
@@ -34,40 +33,29 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<!-- Core Spring Boot Starter -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
-
-		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-
-		<!-- AWS S3 SDK v2 (For uploading build artifacts to S3) -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 		</dependency>
-
-		<!-- Jedis (Direct Redis Client for real-time log publishing) -->
 		<dependency>
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
 			<version>5.1.2</version>
 		</dependency>
-
-		<!-- Apache Tika (MIME Type Detection for .js, .css, .html, .svg, etc.) -->
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-core</artifactId>
 			<version>${tika.version}</version>
 		</dependency>
-
-		<!-- Test dependency -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

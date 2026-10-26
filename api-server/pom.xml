@@ -32,38 +32,27 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<!-- Spring MVC Web -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
-		<!-- Spring WebSocket & STOMP for Real-time Log Streaming -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
-
-		<!-- Spring Data Redis (Lettuce client for Redis Pub/Sub Log Subscription) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
-
-		<!-- AWS SDK v2 for ECS Task Orchestration -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>ecs</artifactId>
 		</dependency>
-
-		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-
-		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

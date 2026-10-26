@@ -21,10 +21,7 @@ public class LogSubscriberService implements MessageListener {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    // Buffer latest logs per project for initial client load / replay
     private final Map<String, List<String>> projectLogsBuffer = new ConcurrentHashMap<>();
-
-    // Registered SSE emitters per project
     private final Map<String, List<SseEmitter>> sseEmitters = new ConcurrentHashMap<>();
 
     @Override
@@ -32,15 +29,12 @@ public class LogSubscriberService implements MessageListener {
         String channel = new String(message.getChannel(), StandardCharsets.UTF_8);
         String logBody = new String(message.getBody(), StandardCharsets.UTF_8);
 
-        // Channel format: logs:<projectId>
         String projectId = channel.startsWith("logs:") ? channel.substring(5) : channel;
 
         log.info("[REDIS-LOG] [{}] -> {}", projectId, logBody);
 
-        // 1. Buffer log
         projectLogsBuffer.computeIfAbsent(projectId, k -> new CopyOnWriteArrayList<>()).add(logBody);
 
-        // 2. Broadcast via WebSocket STOMP topic: /topic/logs/<projectId>
         Map<String, Object> payload = Map.of(
                 "projectId", projectId,
                 "log", logBody,
@@ -48,7 +42,6 @@ public class LogSubscriberService implements MessageListener {
         );
         messagingTemplate.convertAndSend("/topic/logs/" + projectId, (Object) payload);
 
-        // 3. Broadcast to active SSE Emitters
         List<SseEmitter> emitters = sseEmitters.get(projectId);
         if (emitters != null && !emitters.isEmpty()) {
             List<SseEmitter> deadEmitters = new ArrayList<>();
@@ -70,7 +63,7 @@ public class LogSubscriberService implements MessageListener {
     }
 
     public SseEmitter registerSseEmitter(String projectId) {
-        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L); // 10 minutes timeout
+        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
 
         sseEmitters.computeIfAbsent(projectId, k -> new CopyOnWriteArrayList<>()).add(emitter);
 
@@ -78,7 +71,6 @@ public class LogSubscriberService implements MessageListener {
         emitter.onTimeout(() -> removeEmitter(projectId, emitter));
         emitter.onError(e -> removeEmitter(projectId, emitter));
 
-        // Replay existing logs to newly connected client
         List<String> existingLogs = projectLogsBuffer.get(projectId);
         if (existingLogs != null) {
             for (String logLine : existingLogs) {
