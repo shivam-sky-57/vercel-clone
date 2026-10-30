@@ -48,7 +48,7 @@ public class ReverseProxyController {
 
         String slug = resolveSlug(request, host);
 
-        if (slug == null || slug.isBlank() || slug.equalsIgnoreCase("localhost")) {
+        if (slug == null || slug.isBlank() || slug.equalsIgnoreCase("localhost") || slug.equalsIgnoreCase("deploy")) {
             String welcomeHtml = "<!DOCTYPE html><html><head><title>Deployment App Proxy</title>"
                     + "<style>body{background:#0a0a0a;color:#eee;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}"
                     + ".box{background:#161616;border:1px solid #333;padding:40px;border-radius:12px;text-align:center;max-width:500px;}"
@@ -56,7 +56,7 @@ public class ReverseProxyController {
                     + "</style></head><body><div class='box'>"
                     + "<h2>Deployment App - Reverse Proxy</h2>"
                     + "<p style='color:#888;'>Access your deployed project via its unique subdomain or query parameter:</p>"
-                    + "<p><code>http://&lt;project-slug&gt;.localhost:8000</code></p>"
+                    + "<p><code>https://&lt;project-slug&gt;.deploy.dev</code></p>"
                     + "</div></body></html>";
             return Mono.just(ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
@@ -120,7 +120,7 @@ public class ReverseProxyController {
         if (host != null) {
             String hostWithoutPort = host.contains(":") ? host.split(":")[0] : host;
             String[] parts = hostWithoutPort.split("\\.");
-            if (parts.length > 1 && !parts[0].equalsIgnoreCase("localhost") && !parts[0].equalsIgnoreCase("www")) {
+            if (parts.length > 1 && !parts[0].equalsIgnoreCase("localhost") && !parts[0].equalsIgnoreCase("www") && !parts[0].equalsIgnoreCase("deploy")) {
                 return parts[0];
             }
         }
