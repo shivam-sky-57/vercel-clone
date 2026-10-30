@@ -26,7 +26,7 @@ This project automates the frontend deployment lifecycle: cloning source code, r
         │                                                                                             │
         ├─ 2. Real-time Logs (WebSocket / SSE) ◄── [ API Server ] ◄── [ Redis Pub/Sub: logs:<slug> ]  │
         │                                                                                             │
-        └─ 3. GET https://<slug>.deploy.dev ────────────────────────► [ Spring WebFlux Reverse Proxy ] (Port 8000)
+        └─ 3. GET http://<slug>.localtest.me:8000 ──────────────────► [ Spring WebFlux Reverse Proxy ] (Port 8000)
                                                                               │                       │
                                                                               └─ Streams static files ┘
 ```
@@ -37,7 +37,7 @@ This project automates the frontend deployment lifecycle: cloning source code, r
 
 - **Isolated Execution**: Builds run inside isolated Docker containers or AWS ECS tasks and clean up on completion.
 - **Log Pipeline**: Process stdout and stderr are captured and published through Redis Pub/Sub to WebSockets and SSE.
-- **Reverse Proxy**: Built with Spring WebFlux to route requests (`https://<slug>.deploy.dev`) directly to S3.
+- **Reverse Proxy**: Built with Spring WebFlux to route requests (`http://<slug>.localtest.me:8000`) directly to S3.
 - **SPA Fallback**: Resolves client-side routes by falling back to `index.html` for non-asset 404/403 responses.
 - **MIME Type Resolution**: Auto-detects content types for accurate static asset delivery.
 - **Web Dashboard**: UI to trigger deployments, monitor live logs, and access preview URLs.

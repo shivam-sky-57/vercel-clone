@@ -24,7 +24,7 @@ public class ProjectController {
     private final EcsTaskService ecsTaskService;
     private final LogSubscriberService logSubscriberService;
 
-    @Value("${app.proxy.base-url:https://%s.deploy.dev}")
+    @Value("${app.proxy.base-url:http://%s.localtest.me:8000}")
     private String proxyBaseUrlTemplate;
 
     @PostMapping("/project")
